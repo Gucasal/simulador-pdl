@@ -1,0 +1,398 @@
+<!-- Simulador de conversaciones difíciles — PDL Provincia NET -->
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root{
+    --ink:#14171F;--panel:#1C2029;--raised:#232834;--line:#2E3440;--line-soft:#262B35;
+    --text:#EDEFF3;--muted:#9AA3B2;--faint:#6B7280;
+    --teal:#2FB89A;--teal-dim:#1d7a67;--amber:#E8915B;--blue:#7EA6D8;--warn:#E5705B;--ok:#2FB89A;--neutral:#8C93A3;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--ink);color:var(--text);font-family:'Inter',system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:880px;margin:0 auto;padding:32px 20px 56px;}
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--teal);margin:0 0 10px;}
+  h1{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:30px;line-height:1.12;margin:0 0 12px;letter-spacing:-.01em;}
+  .lede{color:var(--muted);font-size:15px;max-width:60ch;margin:0 0 24px;}
+  .seg{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px;margin-bottom:22px;gap:4px;}
+  .seg button{font-family:'Space Grotesk';font-weight:500;font-size:13.5px;border:none;background:transparent;color:var(--muted);padding:8px 16px;border-radius:7px;cursor:pointer;transition:background .15s ease,color .15s ease;}
+  .seg button:hover{color:var(--text);}
+  .seg button.on{background:var(--raised);color:var(--text);}
+  .seg button:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+  .grid{display:grid;gap:14px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 18px 16px;cursor:pointer;transition:border-color .15s ease,background .15s ease;text-align:left;width:100%;color:inherit;font:inherit;}
+  .card:hover{border-color:#3a4150;background:var(--raised);}
+  .card:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+  .card.sel{border-color:var(--teal);background:var(--raised);}
+  .card .tag{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;}
+  .card h3{font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:17px;margin:8px 0 2px;}
+  .card .who{color:var(--faint);font-size:12.5px;margin-bottom:10px;font-family:'IBM Plex Mono',monospace;}
+  .card p{color:var(--muted);font-size:13.5px;margin:0;}
+  .bar{display:flex;gap:12px;align-items:center;margin-top:24px;flex-wrap:wrap;}
+  .btn{font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:14px;border:none;border-radius:9px;padding:11px 20px;cursor:pointer;transition:filter .15s ease,opacity .15s ease;}
+  .btn:focus-visible{outline:2px solid var(--text);outline-offset:2px;}
+  .btn-primary{background:var(--teal);color:#08110e;}
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-primary:disabled{opacity:.4;cursor:not-allowed;filter:none;}
+  .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--line);}
+  .btn-ghost:hover{color:var(--text);border-color:#3a4150;}
+  .chat-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:14px;flex-wrap:wrap;}
+  .ident{display:flex;align-items:center;gap:12px;min-width:0;}
+  .avatar{width:40px;height:40px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-weight:600;font-size:16px;}
+  .ident .nm{font-family:'Space Grotesk';font-weight:500;font-size:15px;}
+  .ident .rl{color:var(--faint);font-size:12px;font-family:'IBM Plex Mono',monospace;}
+  .live{display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono';font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--amber);animation:pulse 1.8s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .stream{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;min-height:300px;max-height:46vh;overflow-y:auto;display:flex;flex-direction:column;gap:14px;}
+  .scene-note{color:var(--muted);font-size:13px;font-style:italic;border-left:2px solid var(--line);padding:2px 0 2px 12px;margin-bottom:2px;}
+  .msg{max-width:78%;font-size:14px;animation:rise .25s ease;}
+  @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .msg .lbl{font-family:'IBM Plex Mono';font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:4px;}
+  .msg .bub{padding:10px 13px;border-radius:12px;}
+  .msg.them{align-self:flex-start;}
+  .msg.them .bub{background:var(--raised);border:1px solid var(--line);border-bottom-left-radius:4px;}
+  .msg.me{align-self:flex-end;text-align:right;}
+  .msg.me .lbl{color:var(--teal-dim);}
+  .msg.me .bub{background:rgba(47,184,154,.13);border:1px solid rgba(47,184,154,.3);border-bottom-right-radius:4px;text-align:left;}
+  .typing{align-self:flex-start;display:flex;gap:4px;padding:8px 4px;}
+  .typing span{width:7px;height:7px;border-radius:50%;background:var(--faint);animation:bob 1.2s infinite;}
+  .typing span:nth-child(2){animation-delay:.15s}.typing span:nth-child(3){animation-delay:.3s}
+  @keyframes bob{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-5px);opacity:1}}
+  .composer{display:flex;gap:10px;margin-top:14px;align-items:flex-end;}
+  textarea{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:11px;color:var(--text);font:inherit;font-size:14px;padding:12px 14px;resize:none;min-height:48px;max-height:140px;}
+  textarea:focus{outline:none;border-color:var(--teal);}
+  textarea::placeholder{color:var(--faint);}
+  .hint{color:var(--faint);font-size:12px;margin-top:8px;}
+  .a-section{margin-bottom:22px;}
+  .a-eyebrow{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);margin:0 0 10px;}
+  .resumen{font-size:15.5px;line-height:1.55;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;}
+  .scarf-row{display:flex;gap:14px;align-items:flex-start;padding:13px 0;border-bottom:1px solid var(--line-soft);}
+  .scarf-row:last-child{border-bottom:none;}
+  .scarf-dim{flex:none;width:108px;font-family:'Space Grotesk';font-weight:500;font-size:13.5px;}
+  .pill{font-family:'IBM Plex Mono';font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:20px;display:inline-block;margin-top:2px;}
+  .pill.ok{background:rgba(47,184,154,.14);color:var(--ok);}
+  .pill.warn{background:rgba(229,112,91,.14);color:var(--warn);}
+  .pill.neutral{background:rgba(140,147,163,.14);color:var(--neutral);}
+  .scarf-c{flex:1;color:var(--muted);font-size:13.5px;}
+  .scarf-c .pill{margin-bottom:5px;}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .col h4{font-family:'Space Grotesk';font-weight:500;font-size:14px;margin:0 0 8px;}
+  .col.win h4{color:var(--ok);}.col.grow h4{color:var(--amber);}
+  .col ul{margin:0;padding-left:18px;color:var(--muted);font-size:13.5px;}
+  .col li{margin-bottom:7px;}
+  .quote{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:10px;padding:15px 17px;}
+  .quote .q{font-family:'Space Grotesk';font-size:16px;font-weight:400;font-style:italic;color:var(--text);margin:0 0 8px;}
+  .quote .why{color:var(--muted);font-size:13.5px;margin:0;}
+  .next{background:rgba(47,184,154,.08);border:1px solid rgba(47,184,154,.25);border-radius:12px;padding:15px 17px;font-size:14.5px;}
+  .next b{color:var(--teal);font-weight:600;}
+  .err{background:rgba(229,112,91,.1);border:1px solid rgba(229,112,91,.3);color:#f0b3a6;border-radius:10px;padding:12px 14px;font-size:13.5px;margin-top:12px;}
+  .footnote{color:var(--faint);font-size:11.5px;margin-top:28px;font-family:'IBM Plex Mono';line-height:1.6;}
+  @media (max-width:560px){.cols{grid-template-columns:1fr;}.msg{max-width:90%;}h1{font-size:25px;}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+</style>
+
+<div class="wrap" id="app"></div>
+
+<script>
+/* ============================================================================
+   PERFILES DE CONVERSACIÓN
+   ----------------------------------------------------------------------------
+   Para sumar un perfil nuevo, copiá este bloque y completalo:
+
+   {
+     id:'identificador-unico',         // sin espacios
+     interlocutor:'colaborador',       // 'colaborador' (hacia abajo) o 'jefe' (hacia arriba)
+     tag:'Competencia que se practica', // etiqueta corta
+     titulo:'Título del escenario',
+     nombre:'Nombre del personaje',
+     rol:'Rol del personaje',
+     contexto:'Qué situación es y qué tiene que lograr quien practica. Termina con: Abrí vos la conversación.',
+     competencias:'qué competencias evalúa la devolución',
+     persona:'La psicología del personaje: qué le pasa REALMENTE (su verdad oculta), cómo arranca, y cómo reacciona según lo traten bien o mal. Esto es lo que hace que el personaje se sienta vivo.'
+   },
+   ============================================================================ */
+const SCENARIOS = [
+  /* ---- Hacia abajo: con un colaborador ---- */
+  {
+    id:'desempeno', interlocutor:'colaborador', tag:'Feedback de desempeño', titulo:'La caída repentina',
+    nombre:'Tomás', rol:'Agente telefónico',
+    contexto:'Hace tres semanas que el TMO y la calidad de Tomás bajaron de golpe, después de meses siendo uno de los mejores del equipo. Citaste una reunión uno a uno. Abrí vos la conversación.',
+    competencias:'dar feedback de desempeño sin atacar, indagar la causa real, cuidar el estatus y la relación',
+    persona:'Tu desempeño bajó porque tu mamá está internada y estás cubriendo turnos de cuidado, dormís poco y llegás agotado. Te da vergüenza contarlo: no querés que lo tomen como una excusa ni que te tengan lástima, y tenés miedo de que esto te juegue en contra. Empezás a la defensiva, minimizando ("no es para tanto", "ya lo voy a recuperar"). Si el referente arranca con los números o con un tono de reproche, te cerrás más y respondés cortante. Solo si te escucha de verdad, te valida y te da la certeza de que no estás en problemas por hablar, vas largando de a poco lo que te está pasando.'
+  },
+  {
+    id:'cambio', interlocutor:'colaborador', tag:'Gestión del cambio', titulo:'La que frena el sistema nuevo',
+    nombre:'Carla', rol:'Agente senior',
+    contexto:'Se está implementando un nuevo sistema de gestión de casos. Carla viene resistiéndose abiertamente: dice que el anterior andaba bien y que esto la vuelve más lenta. Necesitás que se suba al cambio. Abrí vos la conversación.',
+    competencias:'gestionar la resistencia al cambio, reconocer la experiencia, dar sentido y rol en la transición (SCARF: estatus y certeza)',
+    persona:'Tu resistencia real no es técnica: te cuesta la tecnología nueva y tenés miedo de quedar lenta y torpe frente a los agentes más jóvenes, justo vos que sos la referente informal del equipo a la que todos le preguntan. Sentís que el cambio te corre de ese lugar. Por afuera lo planteás como un tema de eficiencia ("el otro sistema era más rápido", "esto es un capricho de arriba"). Si el referente te baja línea o te trata la resistencia como un problema de actitud, te ponés más dura. Si reconoce tu experiencia y te ofrece un rol activo en la transición (ayudar a otros, dar feedback del sistema), bajás la guardia.'
+  },
+  {
+    id:'motivacion', interlocutor:'colaborador', tag:'Motivación y reconocimiento', titulo:'El que se apagó',
+    nombre:'Damián', rol:'Agente histórico del equipo',
+    contexto:'Damián cumple con lo justo: hace su trabajo pero está desenganchado, no propone nada, no participa, hace lo mínimo indispensable. Antes era de los más activos. Querés volver a engancharlo. Abrí vos la conversación.',
+    competencias:'motivar desde lo intrínseco, reconocer el aporte, escuchar la causa del desenganche (SCARF: equidad y autonomía)',
+    persona:'Hace varios meses pediste pasar a un proyecto / puesto con más responsabilidad y nunca te respondieron nada, ni que sí ni que no. Eso te cayó como que da lo mismo esforzarse, que tu crecimiento está estancado y que nadie registra lo que aportás. Por eso te apagaste, pero no lo decís de entrada: respondés con un "está todo bien" desganado, evasivo. Si el referente te tira frases motivacionales genéricas o te pide más actitud sin escucharte, te cerrás con un "sí, dale" vacío. Si reconoce en concreto lo que aportaste y se anima a hablar en serio de tu futuro y de lo que pasó con tu pedido, ahí sí te abrís.'
+  },
+
+  /* ---- Hacia arriba: con un jefe ---- */
+  {
+    id:'carga', interlocutor:'jefe', tag:'Poner límites · asertividad', titulo:'Demasiado en el plato',
+    nombre:'Marcela', rol:'Jefa de Operaciones',
+    contexto:'Tu jefa te viene sumando tareas hace semanas y ya no das abasto: la calidad de lo que entregás está empezando a sufrir. Pediste esta reunión para plantearlo. Abrí vos la conversación.',
+    competencias:'comunicación asertiva hacia arriba, plantear un límite con datos sin sonar a queja, proponer una repriorización',
+    persona:'Estás vos también desbordada y bajo presión de tu propio jefe por los números del trimestre. Cuando alguien te dice que no llega, tu primer reflejo es leerlo como falta de compromiso o de organización ("todos estamos a full", "es cuestión de priorizar bien"). Si la persona viene en modo queja o víctima, te endurecés. Si viene con datos concretos, reconoce la presión que hay y propone cómo repriorizar en vez de solo descargar el problema, ahí bajás la guardia y negociás de verdad.'
+  },
+  {
+    id:'desacuerdo', interlocutor:'jefe', tag:'Disentir con respeto', titulo:'No estás de acuerdo',
+    nombre:'Diego', rol:'Gerente de tu área',
+    contexto:'Diego bajó una decisión que, en tu lectura, va a empeorar la atención al cliente. Pediste hablar para plantear tu desacuerdo antes de que se implemente. Abrí vos la conversación.',
+    competencias:'disentir con respeto, cuestionar la decisión sin cuestionar a la persona, traer evidencia, calibrar hasta dónde insistir',
+    persona:'La decisión la tomaste vos y ya la comunicaste hacia arriba, así que sentís que dar marcha atrás te deja mal parado (amenaza de estatus). Si la persona te plantea que estás equivocado o te cuestiona de prepo, te cerrás y defendés la decisión por orgullo. Si te muestra que entiende por qué la tomaste, te trae un dato o un riesgo concreto que no habías visto, y te ofrece una salida que no te deja expuesto, ahí sí estás dispuesto a revisarla.'
+  },
+  {
+    id:'desarrollo', interlocutor:'jefe', tag:'Pedir desarrollo', titulo:'Querés crecer',
+    nombre:'Laura', rol:'Tu jefa directa',
+    contexto:'Hace más de un año que estás en el mismo puesto y sentís que te estancaste. Querés hablar con Laura sobre tu desarrollo y un posible próximo paso. Abrí vos la conversación.',
+    competencias:'hacer advocacy por uno mismo, pedir con claridad, sostener el pedido frente a evasivas, pedir un compromiso concreto',
+    persona:'No tenés un puesto para ofrecer ahora mismo y te incomoda la conversación, así que tu reflejo es esquivar con generalidades ("sí, te tenemos muy en cuenta", "veamos más adelante", "ahora está difícil el contexto"). Si la persona se conforma con esa respuesta tibia, la conversación muere ahí. Si llega con logros concretos, es específica sobre qué quiere y para cuándo, y te pide un compromiso puntual (una fecha, un próximo paso, algo medible), te cuesta más escaparte y empezás a comprometerte en serio.'
+  }
+];
+
+const MODOS = [
+  { id:'colaborador', label:'Con un colaborador' },
+  { id:'jefe', label:'Con un jefe' }
+];
+
+const state = { screen:'setup', modo:'colaborador', scenario:null, messages:[], busy:false, analysis:null, error:null };
+const app = document.getElementById('app');
+function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function tagColor(s){return s.interlocutor==='jefe'?'var(--blue)':'var(--amber)';}
+function avatarStyle(s){
+  return s.interlocutor==='jefe'
+    ? 'background:linear-gradient(135deg,#7ea6d8,#41608a);color:#0a1422;'
+    : 'background:linear-gradient(135deg,var(--amber),#c96a3e);color:#1b0f08;';
+}
+
+/* ---------- API: habla con el proxy /api/chat, que guarda la clave ---------- */
+async function callModel(system, contents, maxTokens, jsonMode){
+  const res = await fetch('/api/chat',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ system, contents, maxTokens:maxTokens||1024, jsonMode:!!jsonMode })
+  });
+  const data = await res.json();
+  if(!res.ok || data.error) throw new Error(data.error || 'Error del servidor');
+  return (data.text||'').trim();
+}
+
+function roleplaySystem(s){
+  const esJefe = s.interlocutor==='jefe';
+  const vinculo = esJefe
+    ? 'Estás en una conversación uno a uno con una persona de tu equipo que te pidió hablar. Vos sos su jefe/a.'
+    : 'Estás en una conversación uno a uno con tu referente (tu líder de equipo).';
+  return `Sos ${s.nombre}, ${s.rol} en una empresa de medios de pago en Argentina. ${vinculo}
+
+Reglas de personaje:
+- Mantené el personaje todo el tiempo. Nunca digas que sos una IA, nunca rompas el rol, nunca le des consejos a la otra persona sobre cómo conducir la charla.
+- Hablá en español rioplatense con voseo, natural y realista, como una persona de verdad en esa situación. Frases cortas, con emoción cuando corresponde. Sin acotaciones ni narración entre paréntesis: solo lo que dirías en voz alta.
+- Reaccioná de forma psicológicamente realista a CÓMO te habla la otra persona. Si te ataca, te juzga, te cuestiona mal o te amenaza el lugar, te ponés a la defensiva o te cerrás. Si te habla con respeto, te escucha de verdad y te da razones, te vas abriendo de a poco.
+- No se lo pongas fácil. Que se lo gane manejando bien la conversación, no solo siendo amable de entrada.
+- Un solo turno por mensaje, como en una charla real.
+
+Tu situación interna (esto es lo que te pasa, no lo digas todo de una): ${s.persona}`;
+}
+
+function evalSystem(s){
+  const esJefe = s.interlocutor==='jefe';
+  const direccion = esJefe
+    ? 'La persona que practicó estaba gestionando una conversación HACIA ARRIBA: es subordinada y hablaba con su jefe/a. Evaluá su asertividad, cómo encuadró el pedido o el desacuerdo, cómo trajo argumentos y cuánto cuidó el vínculo sin dejar de sostener su posición.'
+    : 'La persona que practicó es un líder que tenía una conversación HACIA ABAJO con un colaborador de su equipo. Evaluá su feedback, su escucha y cómo condujo la charla.';
+  return `Sos un coach de liderazgo. Analizás una conversación que una persona practicó contra un personaje simulado, dentro del Programa de Desarrollo de Liderazgo (PDL).
+
+${direccion}
+El objetivo de la práctica era: ${s.competencias}.
+
+Analizá SOLO el desempeño de quien practicó (los turnos marcados como YO). Anclá el análisis en el modelo SCARF (Estatus, Certeza, Autonomía, Relación, Equidad), que aplica en cualquier dirección de la conversación, más buenas prácticas de comunicación y escucha activa. Sé concreto, honesto y constructivo: marcá lo bueno y lo mejorable sin adular ni inflar. Citá frases textuales reales. Escribí en español rioplatense (voseo).
+
+Devolvé EXCLUSIVAMENTE un objeto JSON válido, sin texto adicional, con esta forma exacta:
+{
+ "resumen":"2 o 3 oraciones sobre cómo manejó la conversación en general",
+ "scarf":[
+   {"dimension":"Estatus","estado":"protegido|amenazado|neutral","comentario":"qué hizo respecto de esta dimensión"},
+   {"dimension":"Certeza","estado":"...","comentario":"..."},
+   {"dimension":"Autonomía","estado":"...","comentario":"..."},
+   {"dimension":"Relación","estado":"...","comentario":"..."},
+   {"dimension":"Equidad","estado":"...","comentario":"..."}
+ ],
+ "fortalezas":["2 a 3 cosas concretas que hizo bien"],
+ "oportunidades":["2 a 3 cosas concretas para mejorar"],
+ "momentoClave":{"cita":"una frase textual de quien practicó que fue punto de inflexión","analisis":"por qué fue clave"},
+ "proximoPaso":"una sola cosa concreta para probar la próxima vez"
+}`;
+}
+
+function render(){
+  if(state.screen==='setup') return renderSetup();
+  if(state.screen==='chat') return renderChat();
+  if(state.screen==='analysis') return renderAnalysis();
+}
+
+function renderSetup(){
+  const cards = SCENARIOS.filter(s=>s.interlocutor===state.modo);
+  const lede = state.modo==='jefe'
+    ? 'Practicá una conversación difícil con un jefe que reacciona como una persona real: poner límites, disentir, pedir lo que necesitás. Al terminar recibís una devolución anclada en SCARF y comunicación asertiva.'
+    : 'Practicá una charla uno a uno con un colaborador que reacciona como una persona real. Al terminar recibís una devolución anclada en SCARF, feedback y escucha activa.';
+  app.innerHTML = `
+    <p class="eyebrow">PDL · Simulador de práctica</p>
+    <h1>Conversaciones difíciles, en un entorno seguro</h1>
+    <div class="seg" role="tablist">
+      ${MODOS.map(m=>`<button class="${state.modo===m.id?'on':''}" data-modo="${m.id}">${m.label}</button>`).join('')}
+    </div>
+    <p class="lede">${lede}</p>
+    <div class="grid">
+      ${cards.map(s=>`
+        <button class="card ${state.scenario===s.id?'sel':''}" data-id="${s.id}">
+          <span class="tag" style="color:${tagColor(s)}">${s.tag}</span>
+          <h3>${s.titulo}</h3>
+          <div class="who">${s.nombre} · ${s.rol}</div>
+          <p>${esc(s.contexto)}</p>
+        </button>`).join('')}
+    </div>
+    <div class="bar">
+      <button class="btn btn-primary" id="start" ${state.scenario?'':'disabled'}>Empezar la conversación</button>
+      <span class="hint">Todos los escenarios son ficticios: no se cargan datos de personas reales.</span>
+    </div>
+    <p class="footnote">PDL Provincia NET — concurso "Poné tus ideas en modo IA"</p>
+  `;
+  app.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{ state.modo=b.dataset.modo; state.scenario=null; render(); });
+  app.querySelectorAll('.card').forEach(c=>c.onclick=()=>{ state.scenario=c.dataset.id; render(); });
+  const sb=document.getElementById('start');
+  if(sb) sb.onclick=()=>{ state.screen='chat';state.messages=[];state.analysis=null;state.error=null;render(); };
+}
+
+function renderChat(){
+  const s=SCENARIOS.find(x=>x.id===state.scenario);
+  app.innerHTML = `
+    <div class="chat-head">
+      <div class="ident">
+        <div class="avatar" style="${avatarStyle(s)}">${s.nombre[0]}</div>
+        <div><div class="nm">${s.nombre}</div><div class="rl">${s.rol}</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <span class="live"><span class="dot"></span>en personaje</span>
+        <button class="btn btn-ghost" id="finish">Terminar y analizar</button>
+      </div>
+    </div>
+    <div class="stream" id="stream"></div>
+    <div class="composer">
+      <textarea id="input" placeholder="Escribí lo que le dirías a ${s.nombre}…" rows="1"></textarea>
+      <button class="btn btn-primary" id="send">Enviar</button>
+    </div>
+    <p class="hint" id="hint">${s.contexto}</p>
+    <div id="errbox"></div>
+  `;
+  drawStream();
+  const input=document.getElementById('input');
+  input.oninput=()=>{input.style.height='auto';input.style.height=Math.min(input.scrollHeight,140)+'px';};
+  input.onkeydown=(e)=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();doSend();}};
+  document.getElementById('send').onclick=doSend;
+  document.getElementById('finish').onclick=doAnalyze;
+  input.focus();
+}
+
+function drawStream(){
+  const s=SCENARIOS.find(x=>x.id===state.scenario);
+  const st=document.getElementById('stream'); if(!st) return;
+  let html = `<div class="scene-note">${esc(s.contexto)}</div>`;
+  state.messages.forEach(m=>{
+    const me = m.role==='yo';
+    html += `<div class="msg ${me?'me':'them'}"><div class="lbl">${me?'Vos':s.nombre}</div><div class="bub">${esc(m.text)}</div></div>`;
+  });
+  if(state.busy) html += `<div class="typing"><span></span><span></span><span></span></div>`;
+  st.innerHTML=html; st.scrollTop=st.scrollHeight;
+}
+
+async function doSend(){
+  if(state.busy) return;
+  const input=document.getElementById('input');
+  const txt=(input.value||'').trim(); if(!txt) return;
+  input.value=''; input.style.height='auto';
+  state.messages.push({role:'yo',text:txt});
+  state.busy=true; setErr(''); drawStream();
+  try{
+    const s=SCENARIOS.find(x=>x.id===state.scenario);
+    // Formato Gemini: quien practica es "user"; el personaje (la IA) es "model"
+    const contents = state.messages.map(m=>({ role: m.role==='yo'?'user':'model', parts:[{text:m.text}] }));
+    const reply = await callModel(roleplaySystem(s), contents, 1024, false);
+    state.messages.push({role:'personaje',text:reply||'…'});
+  }catch(e){
+    setErr('No se pudo conectar con el simulador. Probá de nuevo en unos segundos.');
+  }finally{ state.busy=false; drawStream(); }
+}
+
+function setErr(msg){ const b=document.getElementById('errbox'); if(b) b.innerHTML = msg?`<div class="err">${msg}</div>`:''; }
+
+async function doAnalyze(){
+  const mios=state.messages.filter(m=>m.role==='yo').length;
+  if(mios<2){ setErr('Practicá al menos un par de intercambios antes de pedir la devolución.'); return; }
+  const s=SCENARIOS.find(x=>x.id===state.scenario);
+  state.screen='analysis'; state.analysis=null; state.error=null; render();
+  const transcript=state.messages.map(m=>`${m.role==='yo'?'YO':s.nombre.toUpperCase()}: ${m.text}`).join('\n\n');
+  try{
+    const contents=[{role:'user',parts:[{text:'Conversación a analizar:\n\n'+transcript}]}];
+    let raw = await callModel(evalSystem(s), contents, 1500, true);
+    raw = raw.replace(/```json|```/g,'').trim();
+    state.analysis = JSON.parse(raw);
+  }catch(e){
+    state.error='No se pudo generar la devolución. Volvé a intentarlo.';
+  }
+  render();
+}
+
+function renderAnalysis(){
+  const s=SCENARIOS.find(x=>x.id===state.scenario);
+  if(!state.analysis && !state.error){
+    app.innerHTML=`<p class="eyebrow">Devolución del coach</p><h1>Analizando tu conversación…</h1>
+      <div class="stream" style="min-height:120px;align-items:flex-start;justify-content:center;"><div class="typing"><span></span><span></span><span></span></div></div>`;
+    return;
+  }
+  if(state.error){
+    app.innerHTML=`<p class="eyebrow">Devolución del coach</p><h1>Algo falló</h1>
+      <div class="err">${state.error}</div>
+      <div class="bar"><button class="btn btn-primary" id="retry">Reintentar</button><button class="btn btn-ghost" id="back">Volver al inicio</button></div>`;
+    document.getElementById('retry').onclick=doAnalyze;
+    document.getElementById('back').onclick=()=>{state.screen='setup';render();};
+    return;
+  }
+  const a=state.analysis;
+  const pill=(e)=>e==='protegido'?'ok':e==='amenazado'?'warn':'neutral';
+  const plabel=(e)=>e==='protegido'?'Protegido':e==='amenazado'?'Amenazado':'Neutral';
+  app.innerHTML=`
+    <p class="eyebrow">Devolución del coach · ${s.tag}</p>
+    <h1>Cómo manejaste la charla con ${s.nombre}</h1>
+    <div class="a-section"><div class="resumen">${esc(a.resumen||'')}</div></div>
+    <div class="a-section">
+      <p class="a-eyebrow">Lectura SCARF</p>
+      ${(a.scarf||[]).map(d=>`
+        <div class="scarf-row">
+          <div class="scarf-dim">${esc(d.dimension)}</div>
+          <div class="scarf-c"><span class="pill ${pill(d.estado)}">${plabel(d.estado)}</span><br>${esc(d.comentario)}</div>
+        </div>`).join('')}
+    </div>
+    <div class="a-section cols">
+      <div class="col win"><h4>Lo que hiciste bien</h4><ul>${(a.fortalezas||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+      <div class="col grow"><h4>Para afilar</h4><ul>${(a.oportunidades||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+    </div>
+    ${a.momentoClave?`<div class="a-section"><p class="a-eyebrow">Momento clave</p>
+      <div class="quote"><p class="q">"${esc(a.momentoClave.cita)}"</p><p class="why">${esc(a.momentoClave.analisis)}</p></div></div>`:''}
+    ${a.proximoPaso?`<div class="a-section"><div class="next"><b>Probá la próxima vez:</b> ${esc(a.proximoPaso)}</div></div>`:''}
+    <div class="bar"><button class="btn btn-primary" id="again">Practicar de nuevo</button><button class="btn btn-ghost" id="other">Otro escenario</button></div>
+    <p class="footnote">Devolución generada con IA · debe revisarse en el marco de la facilitación del PDL.</p>
+  `;
+  document.getElementById('again').onclick=()=>{state.screen='chat';state.messages=[];state.analysis=null;render();};
+  document.getElementById('other').onclick=()=>{state.screen='setup';state.messages=[];state.analysis=null;render();};
+}
+
+render();
+</script>
