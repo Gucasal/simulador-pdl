@@ -13,7 +13,11 @@ export default async function handler(req, res) {
     const body = {
       contents: contents,
       generationConfig: {
-        maxOutputTokens: maxTokens || 1024,
+        // El modelo gratuito "piensa" antes de responder y ese pensamiento consume
+        // el presupuesto de salida; lo desactivamos para que use todo el espacio
+        // en la respuesta real (si no, la devolución JSON sale cortada).
+        thinkingConfig: { thinkingBudget: 0 },
+        maxOutputTokens: jsonMode ? 2048 : (maxTokens || 1024),
         temperature: 0.9,
         ...(jsonMode ? { responseMimeType: 'application/json' } : {})
       }
@@ -40,10 +44,15 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: data?.error?.message || 'Error de la API de Gemini' });
     }
 
-    const text = (data?.candidates?.[0]?.content?.parts || [])
+    const cand = data?.candidates?.[0];
+    const text = (cand?.content?.parts || [])
       .map(p => p.text || '')
       .join('')
       .trim();
+
+    if (!text) {
+      return res.status(500).json({ error: 'El modelo devolvió una respuesta vacía (' + (cand?.finishReason || 'sin motivo') + ')' });
+    }
 
     return res.status(200).json({ text });
   } catch (e) {
